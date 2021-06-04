@@ -17,8 +17,8 @@ public enum {{ type }}: Codable, Equatable {
     {% endif %}
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: StringCodingKey.self)
-        let discriminator: String = try container.decode("{{ discriminatorType.discriminatorProperty }}")
+        let decoderContainer = try decoder.container(keyedBy: StringCodingKey.self)
+        let discriminator: String = try decoderContainer.decode("{{ discriminatorType.discriminatorProperty }}")
         switch discriminator {
         {% for name, subType in discriminatorType.mapping %}
         case "{{ name }}":
@@ -34,15 +34,15 @@ public enum {{ type }}: Codable, Equatable {
     }
 
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
+        var encoderContainer = encoder.singleValueContainer()
         switch self {
         {% for subType in discriminatorType.subTypes %}
         case .{{ subType.name}}(let content):
-            try container.encode(content)
+            try encoderContainer.encode(content)
         {% endfor %}
         {% if options.enumUndecodableCase %}
         case .undecodable:
-            try container.encode("undecodable")
+            try encoderContainer.encode("undecodable")
         {% endif %}
         }
     }
@@ -82,10 +82,10 @@ public {{ options.modelType }} {{ type }}: {% if parent %}{{ parent.type }}{% el
 
     public {% if options.modelType == 'class' %}required {% endif %}init(from decoder: Decoder) throws {
         {% if properties.count > 0 %}
-        let container = try decoder.container(keyedBy: StringCodingKey.self)
+        let decoderContainer = try decoder.container(keyedBy: StringCodingKey.self)
 
         {% for property in properties %}
-        {{ property.name }} = try container.decode{% if property.isArray and not property.isAnyType %}Array{% endif %}{% if property.isAnyType %}Any{% endif %}{% if property.optional %}IfPresent{% endif %}("{{ property.value }}")
+        {{ property.name }} = try decoderContainer.decode{% if property.isArray and not property.isAnyType %}Array{% endif %}{% if property.isAnyType %}Any{% endif %}{% if property.optional %}IfPresent{% endif %}("{{ property.value }}")
         {% endfor %}
         {% endif %}
         {% if additionalPropertiesType %}
@@ -112,10 +112,10 @@ public {{ options.modelType }} {{ type }}: {% if parent %}{{ parent.type }}{% el
 
     public {% if parent %}override {% endif %}func encode(to encoder: Encoder) throws {
         {% if properties.count > 0 %}
-        var container = encoder.container(keyedBy: StringCodingKey.self)
+        var encoderContainer = encoder.container(keyedBy: StringCodingKey.self)
 
         {% for property in properties %}
-        try container.encode{% if property.isAnyType %}Any{% endif %}{% if property.optional %}IfPresent{% endif %}({{ property.name }}, forKey: "{{ property.value }}")
+        try encoderContainer.encode{% if property.isAnyType %}Any{% endif %}{% if property.optional %}IfPresent{% endif %}({{ property.name }}, forKey: "{{ property.value }}")
         {% endfor %}
         {% endif %}
         {% if additionalPropertiesType %}
